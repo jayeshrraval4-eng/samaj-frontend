@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import BottomNav from '../components/BottomNav';
 
-https://samaj-backend-nqjq.onrender.com
 
 export default function SettingsScreen() {
   const navigate = useNavigate();

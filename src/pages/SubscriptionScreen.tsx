@@ -2,7 +2,6 @@ import { Check, Crown, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import BottomNav from "../components/BottomNav";
 
-https://samaj-backend-nqjq.onrender.com
 
 // Razorpay loader
 const loadRazorpay = () => {

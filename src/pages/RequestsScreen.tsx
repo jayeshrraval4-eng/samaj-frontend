@@ -8,7 +8,6 @@ import {
   Clock3,
 } from "lucide-react";
 
-https://samaj-backend-nqjq.onrender.com
 
 // 🔹 Login થયેલા user ની ઓળખ
 function getCurrentUser() {

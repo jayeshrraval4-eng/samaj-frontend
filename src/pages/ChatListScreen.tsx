@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare, Clock } from "lucide-react";
 
-https://samaj-backend-nqjq.onrender.com
 
 function getCurrentUser() {
   try {

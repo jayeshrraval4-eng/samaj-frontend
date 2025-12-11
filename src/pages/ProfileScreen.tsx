@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 
-https://samaj-backend-nqjq.onrender.com
 
 type Profile = {
   id?: number;

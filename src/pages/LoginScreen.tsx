@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-https://samaj-backend-nqjq.onrender.com
 
 export default function LoginScreen() {
   const navigate = useNavigate();

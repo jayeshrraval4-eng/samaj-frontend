@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import BottomNav from "../components/BottomNav";
 import { useNavigate } from "react-router-dom";
 
-https://samaj-backend-nqjq.onrender.com
 
 function getCurrentUserId() {
   try {

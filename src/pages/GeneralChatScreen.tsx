@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import BottomNav from "../components/BottomNav";
 
-https://samaj-backend-nqjq.onrender.com
 
 export default function GeneralChatScreen() {
   const [messages, setMessages] = useState<any[]>([]);

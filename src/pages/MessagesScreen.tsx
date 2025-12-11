@@ -4,7 +4,6 @@ import BottomNav from "../components/BottomNav";
 import { Send, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
-https://samaj-backend-nqjq.onrender.com
 
 type ChatListItem = {
   match_id: number | string;

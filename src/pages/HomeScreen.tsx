@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import { MessageSquare, Users, Bot, Crown, Heart } from "lucide-react";
 
-https://samaj-backend-nqjq.onrender.com
 
 export default function HomeScreen() {
   const navigate = useNavigate();

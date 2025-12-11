@@ -1,14 +1,23 @@
-import { useState, useEffect, useMemo } from "react";
-import { Search, Heart, CheckCircle } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, Heart, Users, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import BottomNav from "../components/BottomNav";
 import { useNavigate } from "react-router-dom";
 
-https://samaj-backend-nqjq.onrender.com
+/**
+ * NOTE:
+ * - Place helper functions BEFORE the default export to avoid "Unexpected export" / ESM parsing errors.
+ * - Use import.meta.env.VITE_API_URL for runtime API url. Set it in Vercel environment variables.
+ */
 
-// Read current user from localStorage
-function getCurrentUser() {
+const API_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+
+/* ----------------------------- Helpers ----------------------------- */
+
+/** Safe read from localStorage (works only in browser runtime). */
+function getCurrentUser(): { phone?: string; gender?: string } | null {
   try {
+    if (typeof window === "undefined") return null;
     const raw = localStorage.getItem("currentUser");
     if (!raw) return null;
     return JSON.parse(raw);
@@ -17,9 +26,7 @@ function getCurrentUser() {
   }
 }
 
-const user = getCurrentUser();
-const currentUserId = user?.phone || null;
-const currentUserGender = user?.gender || null; // IMPORTANT
+/* ------------------------------ Types ------------------------------ */
 
 type TabType = "list" | "detail" | "myprofile";
 
@@ -44,10 +51,9 @@ interface ProfileRow {
   avatar_url?: string | null;
 }
 
-// Profile complete check
-function isProfileComplete(p: ProfileRow | null | undefined) {
+/* Utility: check profile completeness */
+function isProfileComplete(p?: ProfileRow | null) {
   if (!p) return false;
-
   return (
     !!p.full_name &&
     !!p.father_name &&
@@ -66,18 +72,22 @@ function isProfileComplete(p: ProfileRow | null | undefined) {
   );
 }
 
+/* ---------------------------- Component ---------------------------- */
+
 export default function MatrimonyScreen() {
   const navigate = useNavigate();
+
+  // Local current user (read safely at runtime)
+  const currentUser = getCurrentUser();
+  const currentUserId = currentUser?.phone || null;
+  const currentUserGender = currentUser?.gender || null; // may be "પુરુષ" or "સ્ત્રી"
+
+  /* states */
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [activeTab, setActiveTab] = useState<TabType>("list");
   const [selectedProfile, setSelectedProfile] = useState<ProfileRow | null>(null);
 
-  const [canChat, setCanChat] = useState(false);
-  const [matchId, setMatchId] = useState<string | null>(null);
-
-  // Form states…
   const [fullName, setFullName] = useState("");
   const [fatherName, setFatherName] = useState("");
   const [motherName, setMotherName] = useState("");
@@ -95,14 +105,21 @@ export default function MatrimonyScreen() {
   const [kundali, setKundali] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
+  const [canChat, setCanChat] = useState(false);
+  const [matchId, setMatchId] = useState<string | null>(null);
+
+  /* ------------------------- API / Data load ------------------------ */
+
   const loadProfiles = async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/profiles`);
+      if (!res.ok) throw new Error("Fetch profiles failed");
       const json = await res.json();
       setProfiles(json.data || []);
     } catch (err) {
-      console.log("PROFILE LOAD ERR:", err);
+      console.error("PROFILE LOAD ERR:", err);
+      setProfiles([]);
     } finally {
       setLoading(false);
     }
@@ -112,17 +129,17 @@ export default function MatrimonyScreen() {
     loadProfiles();
   }, []);
 
-  // My profile
+  /* --------------- derived / my profile / completion -------------- */
+
   const myProfile = useMemo(() => {
     if (!currentUserId) return null;
     return profiles.find((p) => p.phone === currentUserId) || null;
-  }, [profiles]);
+  }, [profiles, currentUserId]);
 
   const myProfileComplete = isProfileComplete(myProfile);
 
   useEffect(() => {
     if (!myProfile) return;
-
     setFullName(myProfile.full_name || "");
     setFatherName(myProfile.father_name || "");
     setMotherName(myProfile.mother_name || "");
@@ -146,40 +163,47 @@ export default function MatrimonyScreen() {
     if (!selectedProfile && completeProfiles.length > 0) {
       setSelectedProfile(completeProfiles[0]);
     }
-  }, [completeProfiles]);
+  }, [completeProfiles, selectedProfile]);
 
-  // CHAT/MATCH CHECK AUTO
+  /* ---------------------- match / chat check ----------------------- */
+
   useEffect(() => {
     if (!selectedProfile || !currentUserId) return;
-
     const check = async () => {
       try {
         const res = await fetch(
           `${API_URL}/check-match?user1=${currentUserId}&user2=${selectedProfile.phone}`
         );
+        if (!res.ok) throw new Error("check-match failed");
         const json = await res.json();
-
         if (json.matched) {
           setCanChat(true);
-          setMatchId(json.match_id);
+          setMatchId(json.match_id || null);
         } else {
           setCanChat(false);
           setMatchId(null);
         }
-      } catch (err) {}
+      } catch (err) {
+        console.warn("match check error:", err);
+        setCanChat(false);
+        setMatchId(null);
+      }
     };
-
     check();
-  }, [selectedProfile]);
+  }, [selectedProfile, currentUserId]);
 
-  // ⭐ RESTRICTION LOGIC FOR MALE USERS
+  /* ---------------------- restrictions / helpers ------------------- */
+
   const blockIfMale = () => {
-    if (currentUserGender === "સ્ત્રી") return false; // female = always allowed
+    // if we have user's gender and it's male -> block (business rule)
+    if (currentUserGender === "સ્ત્રી") return false; // female allowed
+    // If unknown gender, be safe: block
     alert("🔒 સબ્સ્ક્રિપ્શન વગર આ સુવિધા ઉપલબ્ધ નથી.");
     return true;
   };
 
-  // SAVE PROFILE
+  /* -------------------------- save profile ------------------------- */
+
   const handleSaveMyProfile = async () => {
     if (blockIfMale()) return;
 
@@ -194,7 +218,7 @@ export default function MatrimonyScreen() {
         sub_surname: subSurname,
         mother_sub_surname: motherSubSurname,
         gol,
-        age: Number(age),
+        age: age ? Number(age) : null,
         city: village,
         taluka,
         district,
@@ -215,13 +239,19 @@ export default function MatrimonyScreen() {
       if (json.success) {
         alert("પ્રોફાઈલ સેવ થઈ!");
         loadProfiles();
-      } else alert("ERROR");
+      } else {
+        console.error("save profile response:", json);
+        alert("Error saving profile");
+      }
     } catch (err) {
+      console.error("save profile error:", err);
       alert("Server error");
     } finally {
       setSavingProfile(false);
     }
   };
+
+  /* --------------------------- UI render --------------------------- */
 
   if (loading) {
     return <div className="p-10 text-center">લોડ થઈ રહ્યું છે...</div>;
@@ -229,7 +259,7 @@ export default function MatrimonyScreen() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      {/* HEADER */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-pink-500 to-rose-500 px-6 py-6">
         <h1 className="text-white font-gujarati text-2xl font-bold">
           મેટ્રિમોની
@@ -239,7 +269,7 @@ export default function MatrimonyScreen() {
         </p>
       </div>
 
-      {/* TABS */}
+      {/* Tabs */}
       <div className="bg-white border-b px-6 pt-4 sticky top-0 z-10">
         <div className="flex space-x-4">
           <button
@@ -278,7 +308,7 @@ export default function MatrimonyScreen() {
         </div>
       </div>
 
-      {/* ================= LIST TAB ================= */}
+      {/* ============== List Tab ============== */}
       {activeTab === "list" && (
         <div className="px-6 py-6 space-y-4">
           <div className="relative">
@@ -334,14 +364,13 @@ export default function MatrimonyScreen() {
         </div>
       )}
 
-      {/* =============== DETAIL TAB ================= */}
+      {/* ============== Detail Tab ============== */}
       {activeTab === "detail" && selectedProfile && (
         <motion.div
           className="px-6 py-6 space-y-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          {/* Banner Image */}
           <img
             src={selectedProfile.avatar_url || "https://via.placeholder.com/300"}
             className="w-full h-80 rounded-xl object-cover"
@@ -374,7 +403,7 @@ export default function MatrimonyScreen() {
               <b>શિક્ષણ:</b> {selectedProfile.education}
             </p>
             <p className="font-gujarati">
-              <b>નોખરી/ધંધો:</b> {selectedProfile.occupation}
+              <b>નોકરી/ધંધો:</b> {selectedProfile.occupation}
             </p>
 
             {selectedProfile.kundali_available && (
@@ -385,7 +414,6 @@ export default function MatrimonyScreen() {
             )}
           </div>
 
-          {/* SEND REQUEST → BLOCK MALE */}
           <button
             onClick={async () => {
               if (blockIfMale()) return;
@@ -402,6 +430,7 @@ export default function MatrimonyScreen() {
 
                 alert("રીક્વેસ્ટ મોકલાઈ ગઈ ❤️");
               } catch (err) {
+                console.error("send-request err:", err);
                 alert("Error");
               }
             }}
@@ -410,15 +439,11 @@ export default function MatrimonyScreen() {
             રીક્વેસ્ટ મોકલો
           </button>
 
-          {/* CHAT */}
           {canChat && matchId && (
             <button
               onClick={() => {
                 if (blockIfMale()) return;
-
-                navigate(
-                  `/messages?matchId=${matchId}&other=${selectedProfile.phone}`
-                );
+                navigate(`/messages?matchId=${matchId}&other=${selectedProfile.phone}`);
               }}
               className="w-full bg-green-600 text-white py-3 rounded-xl font-gujarati font-bold"
             >
@@ -428,39 +453,27 @@ export default function MatrimonyScreen() {
         </motion.div>
       )}
 
-      {/* ======================= MY PROFILE TAB ======================= */}
+      {/* ============== My Profile Tab ============== */}
       {activeTab === "myprofile" && (
-        <motion.div
-          className="px-6 py-6 space-y-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <h2 className="text-xl font-gujarati font-bold text-center">
-            મારી મેટ્રિમોની પ્રોફાઈલ
-          </h2>
+        <motion.div className="px-6 py-6 space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2 className="text-xl font-gujarati font-bold text-center"> મારી મેટ્રિમોની પ્રોફાઈલ </h2>
 
           {[
             { label: "નામ", value: fullName, setter: setFullName },
             { label: "પિતાનું નામ", value: fatherName, setter: setFatherName },
             { label: "માતાનું નામ", value: motherName, setter: setMotherName },
             { label: "પેટા અટક", value: subSurname, setter: setSubSurname },
-            {
-              label: "માતાની પેટા અટક",
-              value: motherSubSurname,
-              setter: setMotherSubSurname,
-            },
+            { label: "માતાની પેટા અટક", value: motherSubSurname, setter: setMotherSubSurname },
             { label: "ગોળ", value: gol, setter: setGol },
             { label: "વય", value: age, setter: setAge },
             { label: "ગામ", value: village, setter: setVillage },
             { label: "તાલુકો", value: taluka, setter: setTaluka },
             { label: "જીલ્લો", value: district, setter: setDistrict },
             { label: "શિક્ષણ", value: education, setter: setEducation },
-            { label: "નોખરી/ધંધો", value: occupation, setter: setOccupation },
+            { label: "નોકરી/ધંધો", value: occupation, setter: setOccupation },
           ].map((f, i) => (
             <div key={i}>
-              <label className="font-gujarati text-gray-600 text-sm">
-                {f.label}
-              </label>
+              <label className="font-gujarati text-gray-600 text-sm">{f.label}</label>
               <input
                 className="w-full px-4 py-2 border rounded-xl font-gujarati"
                 value={f.value}
@@ -470,64 +483,32 @@ export default function MatrimonyScreen() {
             </div>
           ))}
 
-          {/* DOB */}
           <div>
-            <label className="font-gujarati text-gray-600 text-sm">
-              જન્મ તારીખ
-            </label>
-            <input
-              type="date"
-              className="w-full px-4 py-2 border rounded-xl"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-            />
+            <label className="font-gujarati text-gray-600 text-sm">જન્મ તારીખ</label>
+            <input type="date" className="w-full px-4 py-2 border rounded-xl" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
           </div>
 
-          {/* GENDER */}
           <div>
-            <label className="font-gujarati text-gray-600 text-sm">
-              લિંગ
-            </label>
+            <label className="font-gujarati text-gray-600 text-sm">લિંગ</label>
             <div className="flex items-center space-x-4">
               <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={gender === "પુરુષ"}
-                  onChange={() => setGender("પુરુષ")}
-                />
+                <input type="radio" name="gender" checked={gender === "પુરુષ"} onChange={() => setGender("પુરુષ")} />
                 <span className="font-gujarati">પુરુષ</span>
               </label>
 
               <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={gender === "સ્ત્રી"}
-                  onChange={() => setGender("સ્ત્રી")}
-                />
+                <input type="radio" name="gender" checked={gender === "સ્ત્રી"} onChange={() => setGender("સ્ત્રી")} />
                 <span className="font-gujarati">સ્ત્રી</span>
               </label>
             </div>
           </div>
 
-          {/* KUNDALI */}
           <div className="flex items-center justify-between mt-2">
-            <span className="font-gujarati text-sm text-gray-600">
-              કુંડળી ઉપલબ્ધ?
-            </span>
-            <input
-              type="checkbox"
-              checked={kundali}
-              onChange={(e) => setKundali(e.target.checked)}
-            />
+            <span className="font-gujarati text-sm text-gray-600">કુંડળી ઉપલબ્ધ?</span>
+            <input type="checkbox" checked={kundali} onChange={(e) => setKundali(e.target.checked)} />
           </div>
 
-          <button
-            className="w-full bg-deep-blue text-white py-3 mt-3 rounded-xl font-gujarati"
-            disabled={savingProfile}
-            onClick={handleSaveMyProfile}
-          >
+          <button className="w-full bg-deep-blue text-white py-3 mt-3 rounded-xl font-gujarati" disabled={savingProfile} onClick={handleSaveMyProfile}>
             {savingProfile ? "સેવ થઈ રહ્યું છે..." : "પ્રોફાઈલ સેવ કરો"}
           </button>
         </motion.div>

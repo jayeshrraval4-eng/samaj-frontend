@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import BottomNav from '../components/BottomNav';
 import { useEffect, useState } from "react";
 
-https://samaj-backend-nqjq.onrender.com
 
 export default function TrustScreen() {
   

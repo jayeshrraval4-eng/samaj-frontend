@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-https://samaj-backend-nqjq.onrender.com
 
 export default function ForgotPasswordNewScreen() {
   const [params] = useSearchParams();

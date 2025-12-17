@@ -2,9 +2,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-
 export default function LoginScreen() {
   const navigate = useNavigate();
+
+  // ✅ VITE env variable – THIS WAS THE REAL BUG
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +16,7 @@ export default function LoginScreen() {
     e.preventDefault();
 
     if (!phone || !password) {
-      alert("Please enter phone & password");
+      alert("મોબાઇલ નંબર અને પાસવર્ડ દાખલ કરો");
       return;
     }
 
@@ -23,21 +25,29 @@ export default function LoginScreen() {
 
       const res = await fetch(`${API_URL}/login-user`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone,
+          password,
+        }),
       });
 
       const json = await res.json();
 
       if (!json.success) {
-        alert(json.error);
+        alert(json.error || "લોગિન નિષ્ફળ ગયું");
         return;
       }
 
+      // ✅ Save user
       localStorage.setItem("currentUser", JSON.stringify(json.user));
 
+      // ✅ Redirect
       navigate("/home", { replace: true });
     } catch (err) {
+      console.error("LOGIN ERROR:", err);
       alert("Server error!");
     } finally {
       setLoading(false);
@@ -57,6 +67,7 @@ export default function LoginScreen() {
 
         <form onSubmit={loginUser} className="space-y-4">
           <input
+            type="tel"
             className="w-full border px-4 py-2 rounded-xl font-gujarati"
             placeholder="મોબાઇલ નંબર"
             value={phone}
@@ -72,7 +83,8 @@ export default function LoginScreen() {
           />
 
           <button
-            className="w-full bg-deep-blue text-white py-3 rounded-xl font-gujarati"
+            disabled={loading}
+            className="w-full bg-deep-blue text-white py-3 rounded-xl font-gujarati disabled:opacity-60"
             type="submit"
           >
             {loading ? "કૃપા કરીને રાહ જુઓ..." : "લોગિન કરો"}
@@ -80,7 +92,7 @@ export default function LoginScreen() {
         </form>
 
         <p
-          className="text-center text-sm mt-4 text-black"
+          className="text-center text-sm mt-4 text-black cursor-pointer"
           onClick={() => navigate("/register-email")}
         >
           નવું એકાઉન્ટ બનાવો?

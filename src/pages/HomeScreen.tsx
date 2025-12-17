@@ -1,174 +1,176 @@
-import { useEffect, useState } from "react";
+import {
+  Bell,
+  Settings,
+  Heart,
+  Search,
+  MessageCircle,
+  User,
+  CreditCard,
+  Building2,
+  Bot,
+  Users,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import BottomNav from "../components/BottomNav";
-import { MessageSquare, Users, Bot, Crown, Heart } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+// 🔐 current user
+function getCurrentUser() {
+  try {
+    const raw = localStorage.getItem("currentUser");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 export default function HomeScreen() {
   const navigate = useNavigate();
+  const user = getCurrentUser();
 
-  const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState({
+    profilesViewed: 0,
+    interestsSent: 0,
+    messages: 0,
+  });
+
   const [unreadCount, setUnreadCount] = useState(0);
-  const [subscriptionActive, setSubscriptionActive] = useState(false);
 
-  // Load Current User
+  // 🔹 Load dashboard stats
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("currentUser");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed);
-      }
-    } catch {}
+    if (!user?.phone) return;
+
+    fetch(`${API_URL}/home-stats?phone=${user.phone}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) {
+          setStats(json.data);
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  // Load unread notifications/messages
-  const loadUnread = async () => {
-    if (!user?.phone) return;
-
-    try {
-      const res = await fetch(`${API_URL}/unread-count?phone=${user.phone}`);
-      const json = await res.json();
-      setUnreadCount(json.count || 0);
-    } catch (err) {
-      console.log("UNREAD ERROR:", err);
-    }
-  };
-
-  // Check subscription status
-  const checkSubscription = async () => {
-    if (!user?.phone) return;
-
-    try {
-      const res = await fetch(`${API_URL}/check-subscription?phone=${user.phone}`);
-      const json = await res.json();
-
-      setSubscriptionActive(json.active || false);
-    } catch (err) {
-      console.log("SUB CHECK ERROR:", err);
-    }
-  };
-
+  // 🔔 Notification count
   useEffect(() => {
-    loadUnread();
-    checkSubscription();
-  }, [user]);
+    if (!user?.phone) return;
+
+    fetch(`${API_URL}/notifications/unread-count?phone=${user.phone}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) {
+          setUnreadCount(json.count || 0);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const featureCards = [
+    { icon: Heart, title: "મેટ્રિમોની પ્રોફાઈલ", color: "from-pink-400 to-rose-500", path: "/matrimony" },
+    { icon: Search, title: "પાર્ટનર શોધો", color: "from-mint to-teal-500", path: "/matrimony" },
+    { icon: Users, title: "પરિવાર રજીસ્ટ્રેશન", color: "from-deep-blue to-cyan-500", path: "/family-list" },
+    { icon: MessageCircle, title: "યોગીગ્રામ", color: "from-purple-400 to-indigo-500", path: "/yogigram" },
+    { icon: MessageCircle, title: "મેસેજ", color: "from-blue-400 to-cyan-500", path: "/messages" },
+    { icon: User, title: "મારી પ્રોફાઈલ", color: "from-amber-400 to-orange-500", path: "/profile" },
+    { icon: CreditCard, title: "સબ્સ્ક્રિપ્શન", color: "from-royal-gold to-yellow-600", path: "/subscription" },
+    { icon: Building2, title: "યોગી સમાજ ટ્રસ્ટ", color: "from-emerald-400 to-green-500", path: "/trust" },
+    { icon: Bot, title: "જ્ઞાન સહાયક", color: "from-violet-400 to-purple-500", path: "/ai-assistant" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      
       {/* HEADER */}
-      <div className="bg-deep-blue px-6 py-7 text-white shadow">
-        <h1 className="text-2xl font-gujarati font-bold">
-          સ્વાગત છે {user?.full_name || "મિત્ર"} 🙏
-        </h1>
-        <p className="text-white/80 font-gujarati text-sm">
-          તમારો દિવસ શુભ જાય!
-        </p>
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className="px-6 py-6 space-y-6">
-
-        {/* MATRIMONY CARD */}
-        <div
-          className="premium-card p-5 cursor-pointer"
-          onClick={() => navigate("/matrimony")}
-        >
-          <div className="flex justify-between">
-            <div>
-              <h2 className="text-xl font-gujarati font-bold text-deep-blue">
-                મેટ્રિમોની
-              </h2>
-              <p className="text-gray-600 font-gujarati text-sm">
-                આદર્શ જીવનસાથી શોધો
-              </p>
-            </div>
-            <Heart className="w-10 h-10 text-pink-500" />
-          </div>
-        </div>
-
-        {/* MESSAGES CARD */}
-        <div
-          className="premium-card p-5 cursor-pointer"
-          onClick={() => navigate("/messages")}
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-gujarati font-bold text-deep-blue">
-                મેસેજ
-              </h2>
-              <p className="text-gray-600 font-gujarati text-sm">
-                ચેટ અને સંદેશાઓ
-              </p>
-            </div>
-
-            <div className="relative">
-              <MessageSquare className="w-10 h-10 text-blue-500" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-2 py-1">
-                  {unreadCount}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* PUBLIC CHAT */}
-        <div
-          className="premium-card p-5 cursor-pointer"
-          onClick={() => navigate("/public-chat")}
-        >
-          <div className="flex justify-between">
-            <div>
-              <h2 className="text-xl font-gujarati font-bold text-deep-blue">
-                કોમ્યુનિટી ચેટ
-              </h2>
-              <p className="text-gray-600 font-gujarati text-sm">
-                બધા સભ્યો સાથે વાત કરો
-              </p>
-            </div>
-            <Users className="w-10 h-10 text-green-600" />
-          </div>
-        </div>
-
-        {/* AI ASSISTANT */}
-        <div
-          className="premium-card p-5 cursor-pointer"
-          onClick={() => navigate("/ai-assistant")}
-        >
-          <div className="flex justify-between">
-            <div>
-              <h2 className="text-xl font-gujarati font-bold text-deep-blue">
-                AI સહાયક
-              </h2>
-              <p className="text-gray-600 font-gujarati text-sm">
-                પ્રશ્ન પૂછો, સલાહ મેળવો
-              </p>
-            </div>
-            <Bot className="w-10 h-10 text-purple-600" />
-          </div>
-        </div>
-
-        {/* SUBSCRIPTION REMINDER — only for MALE users */}
-        {user?.gender === "પુરુષ" && !subscriptionActive && (
-          <div
-            className="premium-card p-5 cursor-pointer bg-gradient-to-r from-yellow-200 to-orange-300"
-            onClick={() => navigate("/subscription")}
-          >
-            <div className="flex justify-between">
+      <div className="bg-gradient-to-r from-deep-blue to-[#1A8FA3] safe-area-top">
+        <div className="px-6 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-full bg-mint/20 flex items-center justify-center">
+                <User className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <h2 className="text-xl font-gujarati font-bold text-deep-blue">
-                  પ્રીમિયમ સબ્સ્ક્રિપ્શન
-                </h2>
-                <p className="text-gray-700 font-gujarati text-sm">
-                  રીક્વેસ્ટ મોકલવા માટે સબ્સ્ક્રિપ્શન જરૂરી છે
+                <h1 className="text-white font-gujarati font-bold text-lg">
+                  {user?.full_name || "યોગી સમાજ સંબંધ"}
+                </h1>
+                <p className="text-mint text-xs">
+                  {user?.phone || "Community Connection"}
                 </p>
               </div>
-              <Crown className="w-10 h-10 text-yellow-700" />
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => navigate("/notifications")}
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center relative"
+              >
+                <Bell className="w-5 h-5 text-white" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </button>
+
+              <button
+                onClick={() => navigate("/settings")}
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <Settings className="w-5 h-5 text-white" />
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* FEATURE GRID */}
+      <div className="px-6 py-6">
+        <div className="grid grid-cols-2 gap-4">
+          {featureCards.map((card, index) => {
+            const Icon = card.icon;
+            return (
+              <motion.button
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => navigate(card.path)}
+                className="premium-card p-6 hover:shadow-elevated transition-all active:scale-95"
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-4 shadow-lg`}>
+                  <Icon className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="font-gujarati font-semibold text-gray-800 text-sm">
+                  {card.title}
+                </h3>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* STATS */}
+      <div className="px-6 pb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="premium-card p-6"
+        >
+          <div className="flex items-center justify-around">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-mint">{stats.profilesViewed}</p>
+              <p className="text-xs font-gujarati text-gray-600">Profiles Viewed</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-royal-gold">{stats.interestsSent}</p>
+              <p className="text-xs font-gujarati text-gray-600">રસ દાખવ્યો</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-deep-blue">{stats.messages}</p>
+              <p className="text-xs font-gujarati text-gray-600">Messages</p>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       <BottomNav />

@@ -1,15 +1,23 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Handshake } from "lucide-react";
+import { useEffect } from "react";
 
 export default function SplashScreen() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // ✅ Smart redirect
+    const user = localStorage.getItem("currentUser");
+    const timer = setTimeout(() => {
+      navigate(user ? "/home" : "/login");
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
   return (
-    <div
-      className="fixed inset-0 bg-gradient-to-br from-deep-blue via-[#1A8FA3] to-[#0B4F6C] flex flex-col items-center justify-center overflow-hidden"
-      onClick={() => navigate("/login")} // 🔥 CLICK TO ENTER → No auto-redirect
-    >
+    <div className="fixed inset-0 bg-gradient-to-br from-deep-blue via-[#1A8FA3] to-[#0B4F6C] flex flex-col items-center justify-center overflow-hidden">
       {/* Radial Glow */}
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
@@ -20,19 +28,19 @@ export default function SplashScreen() {
         />
       </div>
 
-      {/* Floating Particles */}
+      {/* Floating Particles (SAFE) */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
             initial={{
               opacity: 0,
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
             }}
             animate={{
               opacity: [0, 0.5, 0],
-              y: [null, Math.random() * -200],
+              y: [0, -200],
             }}
             transition={{
               duration: 3 + Math.random() * 2,
@@ -50,7 +58,6 @@ export default function SplashScreen() {
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ duration: 0.8, type: "spring" }}
-          className="relative"
         >
           <div className="w-32 h-32 rounded-full border-4 border-royal-gold flex items-center justify-center shadow-gold">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-royal-gold to-[#C29F30] flex items-center justify-center">
@@ -69,7 +76,9 @@ export default function SplashScreen() {
           <h1 className="text-4xl font-bold text-white font-gujarati">
             યોગી સમાજ સંબંધ
           </h1>
-          <p className="text-xl text-mint font-medium">Community Connection</p>
+          <p className="text-xl text-mint font-medium">
+            Community Connection
+          </p>
         </motion.div>
 
         {/* Loader */}
@@ -96,7 +105,7 @@ export default function SplashScreen() {
               />
             ))}
           </div>
-          <p className="text-white/80 text-sm">Tap to continue…</p>
+          <p className="text-white/80 text-sm">Loading…</p>
         </motion.div>
       </div>
 
@@ -108,7 +117,9 @@ export default function SplashScreen() {
         className="absolute bottom-12 text-center space-y-2 px-6"
       >
         <p className="text-white/60 text-xs">Version 1.0.0</p>
-        <p className="text-mint text-sm font-gujarati">રાવળ યોગી સમાજ માટે બનાવેલ</p>
+        <p className="text-mint text-sm font-gujarati">
+          રાવળ યોગી સમાજ માટે બનાવેલ
+        </p>
       </motion.div>
     </div>
   );

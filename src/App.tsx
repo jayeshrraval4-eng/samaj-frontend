@@ -27,6 +27,16 @@ import NotificationsScreen from "./pages/NotificationsScreen";
 import AboutScreen from "./pages/AboutScreen";
 import ContactsScreen from "./pages/ContactsScreen";
 
+// FAMILY SCREENS
+import FamilyListScreen from "./pages/FamilyListScreen";
+import FamilyRegistrationScreen from "./pages/FamilyRegistrationScreen";
+
+// 🔐 SIMPLE PROTECTED ROUTE (INLINE)
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const user = localStorage.getItem("currentUser");
+  return user ? children : <Navigate to="/" replace />;
+};
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -47,22 +57,145 @@ export default function App() {
         <Route path="/forgot-verify" element={<ForgotPasswordVerifyScreen />} />
         <Route path="/forgot-new-password" element={<ForgotPasswordNewScreen />} />
 
-        {/* MAIN FEATURES */}
-        <Route path="/home" element={<HomeScreen />} />
-        <Route path="/matrimony" element={<MatrimonyScreen />} />
-        <Route path="/requests" element={<RequestsScreen />} />
-        <Route path="/messages" element={<MessagesScreen />} />
-        <Route path="/yogigram" element={<YogigramScreen />} />
-        <Route path="/chat-list" element={<ChatListScreen />} />
-        <Route path="/general-chat" element={<GeneralChatScreen />} />
-        <Route path="/trust" element={<TrustScreen />} />
-        <Route path="/subscription" element={<SubscriptionScreen />} />
-        <Route path="/ai-assistant" element={<AIAssistantScreen />} />
-        <Route path="/profile" element={<ProfileScreen />} />
-        <Route path="/settings" element={<SettingsScreen />} />
-        <Route path="/notifications" element={<NotificationsScreen />} />
-        <Route path="/about" element={<AboutScreen />} />
-        <Route path="/contacts" element={<ContactsScreen />} />
+        {/* MAIN FEATURES (PROTECTED) */}
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <HomeScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matrimony"
+          element={
+            <ProtectedRoute>
+              <MatrimonyScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute>
+              <RequestsScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <MessagesScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/yogigram"
+          element={
+            <ProtectedRoute>
+              <YogigramScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat-list"
+          element={
+            <ProtectedRoute>
+              <ChatListScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/general-chat"
+          element={
+            <ProtectedRoute>
+              <GeneralChatScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trust"
+          element={
+            <ProtectedRoute>
+              <TrustScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute>
+              <SubscriptionScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-assistant"
+          element={
+            <ProtectedRoute>
+              <AIAssistantScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <ProtectedRoute>
+              <AboutScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contacts"
+          element={
+            <ProtectedRoute>
+              <ContactsScreen />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ FAMILY ROUTES (FIXED) */}
+        <Route
+          path="/family-list"
+          element={
+            <ProtectedRoute>
+              <FamilyListScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/family-register"
+          element={
+            <ProtectedRoute>
+              <FamilyRegistrationScreen />
+            </ProtectedRoute>
+          }
+        />
 
         {/* INVALID ROUTES */}
         <Route path="*" element={<Navigate to="/" replace />} />

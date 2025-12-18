@@ -4,20 +4,28 @@ import { useNavigate } from "react-router-dom";
 
 export default function RegisterEmailScreen() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
 
-  const handleNext = (e: any) => {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+
+  const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // email optional है, लेकिन अगर दिया हो तो basic check
-    if (email && !email.includes("@")) {
-      alert("માન્ય ઇમેઇલ દાખલ કરો અથવા ખાલી રાખો.");
+    const trimmedEmail = email.trim();
+
+    // ✅ Email optional, but validate if provided
+    if (
+      trimmedEmail &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)
+    ) {
+      setError("માન્ય ઇમેઇલ દાખલ કરો અથવા ખાલી રાખો");
       return;
     }
 
-    // Email को RegisterDetailsScreen में पास करेंगे
+    setError("");
+
     navigate("/register-details", {
-      state: { email },
+      state: { email: trimmedEmail || null },
     });
   };
 
@@ -31,6 +39,12 @@ export default function RegisterEmailScreen() {
         <h2 className="text-center font-gujarati text-2xl mb-4">
           તમારું ઇમેઇલ નાખો (ઐચ્છિક)
         </h2>
+
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm font-gujarati mb-3">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleNext} className="space-y-4">
           <input

@@ -2,53 +2,59 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function LoginScreen() {
   const navigate = useNavigate();
-
-  // ✅ VITE env variable – THIS WAS THE REAL BUG
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const loginUser = async (e: any) => {
+  const loginUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!phone || !password) {
-      alert("મોબાઇલ નંબર અને પાસવર્ડ દાખલ કરો");
+    // ✅ Validation
+    if (!/^\d{10}$/.test(phone)) {
+      setError("માન્ય 10 અંકનો મોબાઇલ નંબર દાખલ કરો");
       return;
     }
 
-    try {
-      setLoading(true);
+    if (!password) {
+      setError("પાસવર્ડ દાખલ કરો");
+      return;
+    }
 
+    setError("");
+    setLoading(true);
+
+    try {
       const res = await fetch(`${API_URL}/login-user`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone,
+          phone: phone.trim(),
           password,
         }),
       });
 
-      const json = await res.json();
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : {};
 
-      if (!json.success) {
-        alert(json.error || "લોગિન નિષ્ફળ ગયું");
+      if (!res.ok || !json.success) {
+        setError(json.error || "લોગિન નિષ્ફળ ગયું");
         return;
       }
 
       // ✅ Save user
       localStorage.setItem("currentUser", JSON.stringify(json.user));
 
-      // ✅ Redirect
+      // ✅ Hard redirect (no back)
       navigate("/home", { replace: true });
     } catch (err) {
       console.error("LOGIN ERROR:", err);
-      alert("Server error!");
+      setError("સર્વર ભૂલ, ફરી પ્રયાસ કરો");
     } finally {
       setLoading(false);
     }
@@ -65,13 +71,23 @@ export default function LoginScreen() {
           પ્રવેશ કરો
         </h2>
 
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm font-gujarati mb-3">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={loginUser} className="space-y-4">
           <input
             type="tel"
+            inputMode="numeric"
+            maxLength={10}
             className="w-full border px-4 py-2 rounded-xl font-gujarati"
             placeholder="મોબાઇલ નંબર"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) =>
+              setPhone(e.target.value.replace(/\D/g, ""))
+            }
           />
 
           <input

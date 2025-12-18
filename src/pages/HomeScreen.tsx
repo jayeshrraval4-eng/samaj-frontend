@@ -17,7 +17,7 @@ import BottomNav from "../components/BottomNav";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// 🔐 current user
+// 🔐 current user (safe)
 function getCurrentUser() {
   try {
     const raw = localStorage.getItem("currentUser");
@@ -28,45 +28,61 @@ function getCurrentUser() {
   }
 }
 
+type Stats = {
+  profilesViewed: number;
+  interestsSent: number;
+  messages: number;
+};
+
 export default function HomeScreen() {
   const navigate = useNavigate();
   const user = getCurrentUser();
 
-  const [stats, setStats] = useState({
+  // ✅ SAFE DEFAULT STATE (NO CRASH)
+  const [stats, setStats] = useState<Stats>({
     profilesViewed: 0,
     interestsSent: 0,
     messages: 0,
   });
 
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [loadingStats, setLoadingStats] = useState<boolean>(true);
 
-  // 🔹 Load dashboard stats
+  // 🔹 Load dashboard stats (SAFE)
   useEffect(() => {
-    if (!user?.phone) return;
+    if (!user?.phone || !API_URL) {
+      setLoadingStats(false);
+      return;
+    }
 
     fetch(`${API_URL}/home-stats?phone=${user.phone}`)
       .then((res) => res.json())
       .then((json) => {
-        if (json.success) {
-          setStats(json.data);
+        if (json?.success && json?.data) {
+          setStats({
+            profilesViewed: Number(json.data.profilesViewed) || 0,
+            interestsSent: Number(json.data.interestsSent) || 0,
+            messages: Number(json.data.messages) || 0,
+          });
         }
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+      .finally(() => setLoadingStats(false));
+  }, [user?.phone]);
 
-  // 🔔 Notification count
+  // 🔔 Notification count (SAFE)
   useEffect(() => {
-    if (!user?.phone) return;
+    if (!user?.phone || !API_URL) return;
 
     fetch(`${API_URL}/notifications/unread-count?phone=${user.phone}`)
       .then((res) => res.json())
       .then((json) => {
-        if (json.success) {
-          setUnreadCount(json.count || 0);
+        if (json?.success) {
+          setUnreadCount(Number(json.count) || 0);
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user?.phone]);
 
   const featureCards = [
     { icon: Heart, title: "મેટ્રિમોની પ્રોફાઈલ", color: "from-pink-400 to-rose-500", path: "/matrimony" },
@@ -136,7 +152,9 @@ export default function HomeScreen() {
                 onClick={() => navigate(card.path)}
                 className="premium-card p-6 hover:shadow-elevated transition-all active:scale-95"
               >
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-4 shadow-lg`}>
+                <div
+                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-4 shadow-lg`}
+                >
                   <Icon className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="font-gujarati font-semibold text-gray-800 text-sm">
@@ -158,15 +176,21 @@ export default function HomeScreen() {
         >
           <div className="flex items-center justify-around">
             <div className="text-center">
-              <p className="text-2xl font-bold text-mint">{stats.profilesViewed}</p>
+              <p className="text-2xl font-bold text-mint">
+                {loadingStats ? "—" : stats.profilesViewed}
+              </p>
               <p className="text-xs font-gujarati text-gray-600">Profiles Viewed</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-royal-gold">{stats.interestsSent}</p>
+              <p className="text-2xl font-bold text-royal-gold">
+                {loadingStats ? "—" : stats.interestsSent}
+              </p>
               <p className="text-xs font-gujarati text-gray-600">રસ દાખવ્યો</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-deep-blue">{stats.messages}</p>
+              <p className="text-2xl font-bold text-deep-blue">
+                {loadingStats ? "—" : stats.messages}
+              </p>
               <p className="text-xs font-gujarati text-gray-600">Messages</p>
             </div>
           </div>

@@ -11,14 +11,32 @@ type Member = {
   gender: string;
 };
 
+const RELATION_OPTIONS = [
+  "પિતા",
+  "માતા",
+  "પતિ",
+  "પત્ની",
+  "પુત્ર",
+  "પુત્રી",
+  "ભાઈ",
+  "બહેન",
+  "અન્ય",
+];
+
+const GENDER_OPTIONS = ["પુરુષ", "સ્ત્રી", "અન્ય"];
+
 export default function FamilyRegistrationScreen() {
   const navigate = useNavigate();
 
+  // FAMILY BASIC DETAILS
   const [headName, setHeadName] = useState("");
   const [subSurname, setSubSurname] = useState("");
   const [gol, setGol] = useState("");
   const [village, setVillage] = useState("");
+  const [taluko, setTaluko] = useState("");
+  const [district, setDistrict] = useState("");
 
+  // MEMBERS
   const [members, setMembers] = useState<Member[]>([
     { name: "", relation: "", gender: "" },
   ]);
@@ -50,6 +68,15 @@ export default function FamilyRegistrationScreen() {
       return;
     }
 
+    const validMembers = members.filter(
+      (m) => m.name && m.relation && m.gender
+    );
+
+    if (validMembers.length === 0) {
+      setError("ઓછામાં ઓછો એક સભ્ય પૂરું ભરો");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
@@ -62,7 +89,9 @@ export default function FamilyRegistrationScreen() {
           sub_surname: subSurname,
           gol,
           village,
-          members,
+          taluko,
+          district,
+          members: validMembers,
         }),
       });
 
@@ -73,7 +102,7 @@ export default function FamilyRegistrationScreen() {
       }
 
       navigate("/family-list");
-    } catch (err) {
+    } catch {
       setError("Server error, ફરી પ્રયાસ કરો");
     } finally {
       setLoading(false);
@@ -128,6 +157,21 @@ export default function FamilyRegistrationScreen() {
           className="w-full p-3 rounded-lg border"
         />
 
+        {/* NEW FIELDS */}
+        <input
+          value={taluko}
+          onChange={(e) => setTaluko(e.target.value)}
+          placeholder="તાલુકો"
+          className="w-full p-3 rounded-lg border"
+        />
+
+        <input
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+          placeholder="જિલ્લો"
+          className="w-full p-3 rounded-lg border"
+        />
+
         {/* MEMBERS */}
         <h2 className="font-gujarati font-bold mt-4">સભ્યો</h2>
 
@@ -139,18 +183,32 @@ export default function FamilyRegistrationScreen() {
               onChange={(e) => updateMember(i, "name", e.target.value)}
               className="w-full p-2 border rounded"
             />
-            <input
-              placeholder="સંબંધ"
+
+            <select
               value={m.relation}
               onChange={(e) => updateMember(i, "relation", e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-            <input
-              placeholder="લિંગ"
+              className="w-full p-2 border rounded bg-white"
+            >
+              <option value="">સંબંધ પસંદ કરો</option>
+              {RELATION_OPTIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+
+            <select
               value={m.gender}
               onChange={(e) => updateMember(i, "gender", e.target.value)}
-              className="w-full p-2 border rounded"
-            />
+              className="w-full p-2 border rounded bg-white"
+            >
+              <option value="">લિંગ પસંદ કરો</option>
+              {GENDER_OPTIONS.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
 
             {members.length > 1 && (
               <button
